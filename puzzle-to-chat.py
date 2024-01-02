@@ -22,31 +22,15 @@ import pandas as pd
 import chess
 import random
 
-
 def board_to_string(board):
+    return board.board_fen() if random.choice([True, False]) else str(board)
 
-    if random.choice([True, False]):
-        tempBuffer=board.board_fen()
-    else:
-        tempBuffer=str(board)
-    return(tempBuffer)
-
-# Read the CSV file into a pandas DataFrame
-df = pd.read_csv("lichess_db_puzzle.csv")
-
-# Specify the number of positions to sample
-num_samples = 30
-
-# Sample the specified number of positions from the DataFrame
-sampled_df = df.sample(n=num_samples)
-output=open('assist.txt', 'w', encoding = 'utf8')
-# Loop through each sampled row in the DataFrame
-for i, row in sampled_df.iterrows():
+def process_puzzle_row(row):
     outBuffer='User: '
     # Extract the FEN and moves from the row
     moves = row["Moves"].split()
     if len(moves)>2:
-        continue
+        return None
     fen = row["FEN"]
     themes = row["Themes"].split()
     random.shuffle(themes)
@@ -95,7 +79,26 @@ for i, row in sampled_df.iterrows():
         elif theme=='defensiveMove':
             themeBuffer+=random.choice(['A defensive move. ', 'I will defend against your attack. '])
     outBuffer+=themeBuffer.strip()+'\r\n\r\n'
-    output.write(outBuffer)
-    print(outBuffer)
-    # Add a separator between puzzles
-    print("=" * 50)
+    return(outBuffer)
+
+try:
+    df = pd.read_csv("lichess_db_puzzle.csv")
+    num_samples = 30
+    sampled_df = df.sample(n=num_samples)
+
+    with open('assist.txt', 'w', encoding='utf8') as output:
+        for _, row in sampled_df.iterrows():
+            puzzle_output = process_puzzle_row(row)
+            if puzzle_output is None:
+                continue
+            output.write(puzzle_output)
+            print(puzzle_output)
+            print("=" * 50)
+
+except IOError:
+    print("Error in reading CSV file or writing to assist.txt")
+except pd.errors.EmptyDataError:
+    print("Error: The CSV file is empty")
+except Exception as e:
+    print(f"An error occurred: {e}")
+
