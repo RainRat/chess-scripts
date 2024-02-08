@@ -79,7 +79,10 @@ def generate_random_FEN(compound_piece, hoppel_poppel, custom_pawn):
         fen += generate_pawn_fen(PIECE_BAG)
     return fen
 
-random_fen = generate_random_FEN(args.compound_piece, args.hoppel_poppel, args.custom_pawn)
-print(random_fen)
-with open(args.output_file, 'w') as f:
-    f.write(random_fen)
+try:
+    random_fen = generate_random_FEN(args.compound_piece, args.hoppel_poppel, args.custom_pawn)
+    print(random_fen)
+    with open(args.output_file, 'w') as f:
+        f.write(random_fen)
+except Exception as e:
+    print(f"Error occurred: {e}")
