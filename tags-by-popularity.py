@@ -14,14 +14,20 @@ df = pd.read_csv(args.inputcsv)
 rows = []
 for _, row in df.dropna(subset=['Tags']).iterrows():
     for tag in row['Tags'].split(' // '):
-        adjusted_popularity = 5 - row['Popularity (5=most obscure)']
+        inverse_popularity = 5 - row['Popularity (5=most obscure)']
         rows.append({'Tag': tag, 'Inverse Popularity': inverse_popularity})
 
 # Create a DataFrame from the processed rows
 tags_with_popularity = pd.DataFrame(rows)
 
 # Group by tag and sum the adjusted popularity
-tag_popularity_summary = tags_with_popularity.groupby('Tag')['Total Popularity'].sum().reset_index()
+tag_popularity_summary = tags_with_popularity.groupby('Tag')['Inverse Popularity'].sum().reset_index()
 
 # Export the DataFrame to a new CSV file
 tag_popularity_summary.to_csv('tag_popularity.csv', index=False)
+
+# Additionally, count the number of times each tag appears
+tag_count = tags_with_popularity.groupby('Tag').size().reset_index(name='Count')
+
+# Export the tag counts to a new CSV file
+tag_count.to_csv('tag_count.csv', index=False)
