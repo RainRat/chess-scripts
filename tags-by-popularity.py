@@ -2,32 +2,30 @@ import csv
 import pandas as pd
 import argparse
 
-# Set up argument parsing
-parser = argparse.ArgumentParser(description='Process a CSV file for tag popularity.')
-parser.add_argument('inputcsv', type=str, help='Input CSV file path')
-args = parser.parse_args()
+def process_tag_data(input_csv):
+    with open(input_csv, 'r', encoding = 'utf8') as csvfile:
+        df = pd.read_csv(csvfile)
 
-# Load the CSV file
-df = pd.read_csv(args.inputcsv)
+    rows = [
+        {'Tag': tag, 'Inverse Obscurity': 5 - row['Popularity (5=most obscure)']}
+        for _, row in df.dropna(subset=['Tags']).iterrows()
+        for tag in row['Tags'].split(' // ')
+    ]
 
-# Prepare the data by splitting tags and associating them with their popularity
-rows = []
-for _, row in df.dropna(subset=['Tags']).iterrows():
-    for tag in row['Tags'].split(' // '):
-        inverse_popularity = 5 - row['Popularity (5=most obscure)']
-        rows.append({'Tag': tag, 'Inverse Popularity': inverse_popularity})
+    tags_with_popularity = pd.DataFrame(rows)
+    tag_popularity_summary = tags_with_popularity.groupby('Tag')['Inverse Obscurity'].sum().reset_index()
+    tag_count = tags_with_popularity.groupby('Tag').size().reset_index(name='Count')
 
-# Create a DataFrame from the processed rows
-tags_with_popularity = pd.DataFrame(rows)
+    return tag_popularity_summary, tag_count
 
-# Group by tag and sum the adjusted popularity
-tag_popularity_summary = tags_with_popularity.groupby('Tag')['Inverse Popularity'].sum().reset_index()
+if __name__ == '__main__':
+    # Set up argument parsing
+    parser = argparse.ArgumentParser(description='Process a CSV file for tag popularity.')
+    parser.add_argument('inputcsv', type=str, help='Input CSV file path')
+    args = parser.parse_args()
 
-# Export the DataFrame to a new CSV file
-tag_popularity_summary.to_csv('tag_popularity.csv', index=False)
+    tag_popularity_summary, tag_count = process_tag_data(args.inputcsv)
 
-# Additionally, count the number of times each tag appears
-tag_count = tags_with_popularity.groupby('Tag').size().reset_index(name='Count')
-
-# Export the tag counts to a new CSV file
-tag_count.to_csv('tag_count.csv', index=False)
+    # Export the DataFrames to new CSV files
+    tag_popularity_summary.to_csv('tag_popularity.csv', index=False)
+    tag_count.to_csv('tag_count.csv', index=False)
